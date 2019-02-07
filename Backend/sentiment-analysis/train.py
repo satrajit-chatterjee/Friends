@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -127,28 +129,30 @@ for epoch in range(epoch, EPOCHS):
     batch = []
     labels = []
     running_loss = 0.0
-    for k in range(BATCH_SIZE):
-        # print("Loading training batch...................")
-        batch.append(loaded_dataset[iterator])
-        loaded_labels[iterator] = loaded_labels[iterator].replace("\n", "")
-        labels.append(loaded_labels[iterator])
-        iterator += 1
-    batch_indices = []
-    for l, i in enumerate(batch):
-        temp = []
-        for k, j in enumerate(i):
-            temp.append(k)
-        batch_indices.append(temp)
-    batch_indices = torch.from_numpy(np.array(batch_indices).astype(int)).type(torch.LongTensor)
-    batch_indices = batch_indices.to(device)
-    labels = torch.from_numpy(np.array(labels).astype(int))
-    optimizer.zero_grad()
-    outputs = net(batch_indices)
-    loss = criterion(outputs, labels.to(device, dtype=torch.long))
-    writer.add_scalar('loss', loss, epoch)
-    loss.backward()
-    optimizer.step()
-    running_loss += loss.item()
+    iterator = 0
+    for step in range(math.ceil(len(loaded_dataset)/BATCH_SIZE)):
+        for k in range(BATCH_SIZE):
+            # print("Loading training batch...................")
+            batch.append(loaded_dataset[iterator])
+            loaded_labels[iterator] = loaded_labels[iterator].replace("\n", "")
+            labels.append(loaded_labels[iterator])
+            iterator += 1
+        batch_indices = []
+        for l, i in enumerate(batch):
+            temp = []
+            for k, j in enumerate(i):
+                temp.append(k)
+            batch_indices.append(temp)
+        batch_indices = torch.from_numpy(np.array(batch_indices).astype(int)).type(torch.LongTensor)
+        batch_indices = batch_indices.to(device)
+        labels = torch.from_numpy(np.array(labels).astype(int))
+        optimizer.zero_grad()
+        outputs = net(batch_indices)
+        loss = criterion(outputs, labels.to(device, dtype=torch.long))
+        writer.add_scalar('loss', loss, epoch)
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item()
     if epoch % 100 == 99:
         print('[EPOCH: %d] loss: %.3f' %
               (epoch + 1, running_loss / 100))
